@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Arabisch Lernen</title>
+    <!-- PWA Meta Tags for iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Arabisch Lernen" />
+    <!-- Apple Touch Icons -->
+    <link
+      rel="apple-touch-icon"
+      href="/icons/icon-180x180.png"
+      sizes="180x180"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="/icons/icon-152x152.png"
+      sizes="152x152"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="/icons/icon-120x120.png"
+      sizes="120x120"
+    />
+    <link rel="apple-touch-icon" href="/icons/icon-76x76.png" sizes="76x76" />
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Amiri&display=swap");
+      .arabic {
+        font-family: "Amiri", serif;
+        direction: rtl;
+        text-align: right;
+      }
+      .letter-card,
+      .badge-card {
+        transition: transform 0.3s ease;
+      }
+      .letter-card.enlarged,
+      .badge-card.enlarged {
+        transform: scale(2);
+        z-index: 10;
+      }
+      .grayscale {
+        filter: grayscale(100%);
+        opacity: 0.5;
+      }
+      .progress-bar {
+        height: 20px;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background-color: #4caf50;
+        transition: width 0.3s ease;
+      }
+      .badge-icon {
+        width: 40px;
+        height: 40px;
+        display: inline-block;
+        background-size: cover;
+        background-position: center;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      .sticky-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        z-index: 20;
+        padding: 10px 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: none;
+      }
+      .sticky-progress.show {
+        display: block;
+      }
+      /* Ensure content starts below status bar in standalone mode */
+      body {
+        padding-top: env(safe-area-inset-top);
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex flex-col">
+    <header class="bg-blue-600 text-white py-4">
+      <div class="container mx-auto px-4">
+        <h1 class="text-3xl font-bold text-center">تعلّم العربية</h1>
+        <p class="text-center mt-2">
+          Lerne das arabische Alphabet, Tajweed und Harakat
+        </p>
+        <nav class="mt-4">
+          <ul class="flex justify-center space-x-4">
+            <li>
+              <a href="#home" class="hover:underline" onclick="showPage('home')"
+                >Startseite</a
+              >
+            </li>
+            <li>
+              <a
+                href="#progress"
+                class="hover:underline"
+                onclick="showPage('progress')"
+                >Fortschritt</a
+              >
+            </li>
+            <li>
+              <a
+                href="#badges"
+                class="hover:underline"
+                onclick="showPage('badges')"
+                >Abzeichen</a
+              >
+            </li>
+            <li>
+              <a
+                href="#tajweedAnswers"
+                class="hover:underline"
+                onclick="showPage('tajweedAnswers')"
+                >Antworten</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div id="stickyProgress" class="sticky-progress">
+      <div class="container mx-auto px-4">
+        <p>Level: <span id="stickyLevel">1</span></p>
+        <div class="progress-bar mt-2">
+          <div
+            id="stickyProgressFill"
+            class="progress-fill"
+            style="width: 0%"
+          ></div>
+        </div>
+        <p class="mt-2 text-sm">
+          XP bis zum nächsten Level: <span id="stickyXpProgress">0/30</span>
+        </p>
+      </div>
+    </div>
+
+    <main class="container mx-auto px-4 py-8 flex-grow">
+      <!-- Startseite -->
+      <section id="home" class="page">
+        <div class="mb-8" id="progressSection">
+          <h2 class="text-2xl font-semibold mb-4">Dein Fortschritt</h2>
+          <div class="bg-white p-4 rounded-lg shadow-md">
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center space-x-4">
+                <div>
+                  <p>Punktzahl: <span id="score">0</span></p>
+                  <p>Level: <span id="level">1</span></p>
+                </div>
+                <div>
+                  <p>Aktuelles Abzeichen: <span id="currentBadge"></span></p>
+                  <div id="badgeIcon" class="badge-icon"></div>
+                </div>
+              </div>
+              <button
+                id="shareButton"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Punktzahl teilen
+              </button>
+            </div>
+            <div class="progress-bar">
+              <div
+                id="progressFill"
+                class="progress-fill"
+                style="width: 0%"
+              ></div>
+            </div>
+            <p class="mt-2 text-sm">
+              XP bis zum nächsten Level: <span id="xpProgress">0/30</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Spiel 1: Buchstaben-Matching -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-xl font-semibold mb-4 arabic">مطابقة الحروف</h3>
+            <p>
+              Lerne das arabische Alphabet, indem du Buchstaben zu ihren
+              Aussprachen zuordnest.
+            </p>
+            <button
+              onclick="startLetterMatching()"
+              class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
+              Spiel starten
+            </button>
+            <div id="letterMatchingGame" class="mt-4 hidden">
+              <p class="arabic text-2xl" id="letterDisplay"></p>
+              <input
+                id="letterInput"
+                type="text"
+                placeholder="Gib die Aussprache ein"
+                class="w-full p-2 mt-2 border rounded"
+              />
+              <button
+                onclick="checkLetter()"
+                class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Überprüfen
+              </button>
+              <p id="letterFeedback" class="mt-2"></p>
+            </div>
+          </div>
+
+          <!-- Spiel 2: Harakat-Matching -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-xl font-semibold mb-4 arabic">مطابقة الحركات</h3>
+            <p>
+              Übe die Harakat (Vokalzeichen), indem du die richtigen Zeichen zu
+              den Wörtern zuordnest.
+            </p>
+            <button
+              onclick="startHarakatMatching()"
+              class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
+              Spiel starten
+            </button>
+            <div id="harakatMatchingGame" class="mt-4 hidden">
+              <p class="arabic text-2xl" id="harakatDisplay"></p>
+              <select id="harakatSelect" class="w-full p-2 mt-2 border rounded">
+                <option value="">Welche Harakat wurde verwendet?</option>
+                <option value="fatha">Fatha (َ)</option>
+                <option value="kasra">Kasra (ِ)</option>
+                <option value="damma">Damma (ُ)</option>
+              </select>
+              <button
+                onclick="checkHarakat()"
+                class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Überprüfen
+              </button>
+              <p id="harakatFeedback" class="mt-2"></p>
+            </div>
+          </div>
+
+          <!-- Spiel 3: Tajweed-Quiz -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-xl font-semibold mb-4 arabic">اختبار التجويد</h3>
+            <p>Teste dein Wissen über Tajweed-Regeln mit einem Quiz.</p>
+            <button
+              onclick="startTajweedQuiz()"
+              class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Spiel starten
+            </button>
+            <div id="tajweedQuizGame" class="mt-4 hidden">
+              <p id="tajweedQuestion"></p>
+              <div id="tajweedOptions" class="mt-2"></div>
+              <button
+                id="confirmTajweed"
+                class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 hidden"
+              >
+                Antwort bestätigen
+              </button>
+              <p id="tajweedFeedback" class="mt-2"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fortschrittsseite -->
+      <section id="progress" class="page hidden">
+        <h2 class="text-2xl font-semibold mb-4">Dein Fortschritt</h2>
+        <p class="mb-4">
+          Hier siehst du, welche Buchstaben du bereits gelernt hast. Klicke auf
+          einen Buchstaben, um ihn zu vergrößern!
+        </p>
+        <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+          <p>Level: <span id="progressLevel">1</span></p>
+          <div class="progress-bar mt-2">
+            <div
+              id="progressFill2"
+              class="progress-fill"
+              style="width: 0%"
+            ></div>
+          </div>
+          <p class="mt-2 text-sm">
+            XP bis zum nächsten Level: <span id="xpProgress2">0/30</span>
+          </p>
+        </div>
+        <div
+          id="letterProgress"
+          class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"
+        ></div>
+      </section>
+
+      <!-- Abzeichen-Seite -->
+      <section id="badges" class="page hidden">
+        <h2 class="text-2xl font-semibold mb-4">Deine Abzeichen</h2>
+        <p class="mb-4">
+          Hier siehst du alle Abzeichen, die du erreicht hast. Klicke auf ein
+          Abzeichen, um es zu vergrößern!
+        </p>
+        <div
+          id="badgeProgress"
+          class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"
+        ></div>
+      </section>
+
+      <!-- Tajweed Antworten-Seite -->
+      <section id="tajweedAnswers" class="page hidden">
+        <h2 class="text-2xl font-semibold mb-4">Tajweed Antworten</h2>
+        <p class="mb-4">
+          Hier findest du alle Tajweed-Fragen und ihre korrekten Antworten.
+        </p>
+        <div class="bg-white p-4 rounded-lg shadow-md">
+          <table>
+            <thead>
+              <tr>
+                <th>Frage</th>
+                <th>Korrekte Antwort</th>
+              </tr>
+            </thead>
+            <tbody id="tajweedAnswersTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bg-blue-600 text-white py-4">
+      <div class="container mx-auto px-4 text-center">
+        <p>© 2025 Arabisch Lernen. Alle Rechte vorbehalten.</p>
+      </div>
+    </footer>
+
+    <script>
+      // Daten für die Spiele
+      const arabicLetters = [
+        { letter: "ا", pronunciation: "Alif" },
+        { letter: "ب", pronunciation: "Ba" },
+        { letter: "ت", pronunciation: "Ta" },
+        { letter: "ث", pronunciation: "Tha" },
+        { letter: "ج", pronunciation: "Jim" },
+        { letter: "ح", pronunciation: "Ha" },
+        { letter: "خ", pronunciation: "Kha" },
+        { letter: "د", pronunciation: "Dal" },
+        { letter: "ذ", pronunciation: "Dhal" },
+        { letter: "ر", pronunciation: "Ra" },
+        { letter: "ز", pronunciation: "Zay" },
+        { letter: "س", pronunciation: "Sin" },
+        { letter: "ش", pronunciation: "Shin" },
+        { letter: "ص", pronunciation: "Sad" },
+        { letter: "ض", pronunciation: "Dad" },
+        { letter: "ط", pronunciation: "Ta" },
+        { letter: "ظ", pronunciation: "Dha" },
+        { letter: "ع", pronunciation: "Ayn" },
+        { letter: "غ", pronunciation: "Ghayn" },
+        { letter: "ف", pronunciation: "Fa" },
+        { letter: "ق", pronunciation: "Qaf" },
+        { letter: "ك", pronunciation: "Kaf" },
+        { letter: "ل", pronunciation: "Lam" },
+        { letter: "م", pronunciation: "Mim" },
+        { letter: "ن", pronunciation: "Nun" },
+        { letter: "ه", pronunciation: "Ha" },
+        { letter: "و", pronunciation: "Waw" },
+        { letter: "ي", pronunciation: "Ya" },
+      ];
+
+      const harakatWords = [
+        { word: "كَتب", harakat: "fatha" },
+        { word: "كِتب", harakat: "kasra" },
+        { word: "كُتب", harakat: "damma" },
+      ];
+
+      const tajweedQuestions = [
+        {
+          question: "Was ist die Regel des Idgham im Tajweed?",
+          options: [
+            "Verschmelzung von zwei Buchstaben",
+            "Verbergen eines Buchstabens",
+            "Deutliche Aussprache eines Buchstabens",
+            "Verdopplung eines Buchstabens",
+          ],
+          correct: "Verschmelzung von zwei Buchstaben",
+        },
+        {
+          question: "Was bedeutet Ikhfa im Tajweed?",
+          options: [
+            "Deutliche Aussprache",
+            "Verbergen eines Buchstabens",
+            "Verschmelzung mit Nasenlaut",
+            "Verdopplung eines Buchstabens",
+          ],
+          correct: "Verbergen eines Buchstabens",
+        },
+        {
+          question:
+            "Welcher Buchstabe löst Idgham mit Ghunna aus, wenn er auf ein Nun Sakinah folgt?",
+          options: ["م", "ر", "ب", "د"],
+          correct: "م",
+        },
+        {
+          question: "Was ist die Regel für Qalqala?",
+          options: [
+            "Verlängerung eines Vokals",
+            "Echoartiger Klang bei bestimmten Buchstaben",
+            "Nasenlaut bei der Aussprache",
+            "Verbergen eines Buchstabens",
+          ],
+          correct: "Echoartiger Klang bei bestimmten Buchstaben",
+        },
+        {
+          question: "Welche Buchstaben gehören zu den Qalqala-Buchstaben?",
+          options: ["ق ط ب ج د", "ا ب ت ث ج", "س ش ص ض ط", "ف ق ك ل م"],
+          correct: "ق ط ب ج د",
+        },
+        {
+          question: "Was passiert bei der Regel Iqlab?",
+          options: [
+            "Nun wird zu Mim",
+            "Buchstabe wird verdoppelt",
+            "Buchstabe wird verlängert",
+            "Buchstabe wird übersprungen",
+          ],
+          correct: "Nun wird zu Mim",
+        },
+        {
+          question:
+            "Welcher Buchstabe löst Iqlab aus, wenn er auf Nun Sakinah folgt?",
+          options: ["ب", "م", "ن", "ل"],
+          correct: "ب",
+        },
+        {
+          question: "Was bedeutet Madd im Tajweed?",
+          options: [
+            "Verlängerung eines Vokals",
+            "Verbergen eines Buchstabens",
+            "Verschmelzung zweier Buchstaben",
+            "Echoartiger Klang",
+          ],
+          correct: "Verlängerung eines Vokals",
+        },
+        {
+          question: "Wie viele Harakat lang ist ein Madd Tabee‘i?",
+          options: ["1 Haraka", "2 Harakat", "4 Harakat", "6 Harakat"],
+          correct: "2 Harakat",
+        },
+        {
+          question: "Was ist die Regel für Izhar?",
+          options: [
+            "Deutliche Aussprache eines Buchstabens",
+            "Verbergen eines Buchstabens",
+            "Verschmelzung zweier Buchstaben",
+            "Echoartiger Klang",
+          ],
+          correct: "Deutliche Aussprache eines Buchstabens",
+        },
+        {
+          question:
+            "Welche Buchstaben lösen Izhar aus, wenn sie auf Nun Sakinah folgen?",
+          options: ["ء ه ع ح غ خ", "ب ج د ط ق", "م ن ل ر و", "س ش ص ض ط"],
+          correct: "ء ه ع ح غ خ",
+        },
+        {
+          question: "Was ist Madd Munfasil?",
+          options: [
+            "Verlängerung innerhalb eines Wortes",
+            "Verlängerung zwischen zwei Wörtern",
+            "Verbergen eines Buchstabens",
+            "Verschmelzung mit Ghunna",
+          ],
+          correct: "Verlängerung zwischen zwei Wörtern",
+        },
+        {
+          question: "Wie viele Harakat lang ist Madd Munfasil typischerweise?",
+          options: ["2 Harakat", "4-5 Harakat", "6 Harakat", "1 Haraka"],
+          correct: "4-5 Harakat",
+        },
+        {
+          question: "Was ist die Regel für Ikhfa Shafawi?",
+          options: [
+            "Verbergen von Mim Sakinah vor Ba",
+            "Verschmelzung von Mim mit Nun",
+            "Deutliche Aussprache von Mim",
+            "Echoartiger Klang von Mim",
+          ],
+          correct: "Verbergen von Mim Sakinah vor Ba",
+        },
+        {
+          question: "Welcher Buchstabe löst Idgham Shafawi aus?",
+          options: ["م", "ب", "ن", "ل"],
+          correct: "م",
+        },
+        {
+          question: "Was bedeutet Ghunna im Tajweed?",
+          options: [
+            "Nasenlaut",
+            "Echoartiger Klang",
+            "Verlängerung eines Vokals",
+            "Verbergen eines Buchstabens",
+          ],
+          correct: "Nasenlaut",
+        },
+        {
+          question:
+            "Welche Buchstaben lösen Ikhfa aus, wenn sie auf Nun Sakinah folgen?",
+          options: [
+            "ت ث ج د ذ ز س ش ص ض ط ظ ع غ ف ق ك ل م ن",
+            "ء ه ع ح غ خ",
+            "ي ر ل ن و م",
+            "ق ط ب ج د",
+          ],
+          correct: "ت ث ج د ذ ز س ش ص ض ط ظ ع غ ف ق ك ل م ن",
+        },
+        {
+          question: "Was ist Madd Lazim?",
+          options: [
+            "Optionale Verlängerung",
+            "Verpflichtende Verlängerung von 6 Harakat",
+            "Verbergen eines Buchstabens",
+            "Verschmelzung zweier Buchstaben",
+          ],
+          correct: "Verpflichtende Verlängerung von 6 Harakat",
+        },
+        {
+          question:
+            "Was passiert, wenn ein Tanwin auf einen Izhar-Buchstaben trifft?",
+          options: [
+            "Tanwin wird deutlich ausgesprochen",
+            "Tanwin wird zu Mim",
+            "Tanwin wird verschmolzen",
+            "Tanwin wird übersprungen",
+          ],
+          correct: "Tanwin wird deutlich ausgesprochen",
+        },
+        {
+          question: "Was ist die Regel für Madd Aridh Lissukun?",
+          options: [
+            "Verlängerung bei einem stoppenden Sukun",
+            "Verlängerung innerhalb eines Wortes",
+            "Verbergen eines Buchstabens",
+            "Echoartiger Klang",
+          ],
+          correct: "Verlängerung bei einem stoppenden Sukun",
+        },
+      ];
+
+      // Abzeichen-Daten (alle 5 Level)
+      const badges = [
+        { level: 5, name: "Erde", icon: "🌍" },
+        { level: 10, name: "Wasser", icon: "💧" },
+        { level: 15, name: "Himmel", icon: "🌤️" },
+        { level: 20, name: "Erde", icon: "🌍" },
+      ];
+
+      // Spielstatus
+      let score = parseInt(localStorage.getItem("score")) || 0;
+      let level = parseInt(localStorage.getItem("level")) || 1;
+      let xp = parseInt(localStorage.getItem("xp")) || 0;
+      let learnedLetters =
+        JSON.parse(localStorage.getItem("learnedLetters")) || [];
+      let availableLetters = JSON.parse(
+        localStorage.getItem("availableLetters")
+      ) || [...arabicLetters];
+      let currentLetter = null;
+      let currentHarakat = null;
+      let currentTajweedIndex = 0;
+      let selectedTajweedOption = null;
+
+      // Gestaffeltes Levelsystem
+      function getXpPerLevel(level) {
+        if (level <= 10) return 30;
+        if (level <= 30) return 50;
+        if (level <= 50) return 70;
+        return 100;
+      }
+
+      // UI-Updates
+      function updateUI() {
+        const xpPerLevel = getXpPerLevel(level);
+        document.getElementById("score").textContent = score;
+        document.getElementById("level").textContent = level;
+        document.getElementById("progressLevel").textContent = level;
+        document.getElementById("stickyLevel").textContent = level;
+        const progressPercent = (xp / xpPerLevel) * 100;
+        document.getElementById(
+          "progressFill"
+        ).style.width = `${progressPercent}%`;
+        document.getElementById(
+          "progressFill2"
+        ).style.width = `${progressPercent}%`;
+        document.getElementById(
+          "stickyProgressFill"
+        ).style.width = `${progressPercent}%`;
+        document.getElementById(
+          "xpProgress"
+        ).textContent = `${xp}/${xpPerLevel}`;
+        document.getElementById(
+          "xpProgress2"
+        ).textContent = `${xp}/${xpPerLevel}`;
+        document.getElementById(
+          "stickyXpProgress"
+        ).textContent = `${xp}/${xpPerLevel}`;
+        const currentBadge = badges.find((b) => b.level <= level) || {
+          name: "Kein Abzeichen",
+          icon: "",
+        };
+        document.getElementById("currentBadge").textContent = currentBadge.name;
+        document.getElementById("badgeIcon").textContent = currentBadge.icon;
+        localStorage.setItem("score", score);
+        localStorage.setItem("level", level);
+        localStorage.setItem("xp", xp);
+        localStorage.setItem("learnedLetters", JSON.stringify(learnedLetters));
+        localStorage.setItem(
+          "availableLetters",
+          JSON.stringify(availableLetters)
+        );
+        updateProgressPage();
+        updateBadgesPage();
+        updateTajweedAnswersPage();
+      }
+
+      // Seiten-Navigation
+      function showPage(pageId) {
+        document
+          .querySelectorAll(".page")
+          .forEach((page) => page.classList.add("hidden"));
+        document.getElementById(pageId).classList.remove("hidden");
+        updateStickyProgressVisibility();
+      }
+
+      // Fortschrittsseite aktualisieren
+      function updateProgressPage() {
+        const letterProgress = document.getElementById("letterProgress");
+        letterProgress.innerHTML = "";
+        arabicLetters.forEach((letterObj) => {
+          const div = document.createElement("div");
+          div.className = `letter-card p-4 rounded-lg text-center text-2xl arabic cursor-pointer ${
+            learnedLetters.includes(letterObj.letter)
+              ? "bg-green-200"
+              : "bg-gray-200 grayscale"
+          }`;
+          div.textContent = letterObj.letter;
+          div.onclick = (e) => {
+            e.stopPropagation();
+            toggleItemSize(div, ".letter-card");
+          };
+          letterProgress.appendChild(div);
+        });
+      }
+
+      // Abzeichen-Seite aktualisieren
+      function updateBadgesPage() {
+        const badgeProgress = document.getElementById("badgeProgress");
+        badgeProgress.innerHTML = "";
+        badges.forEach((badge) => {
+          const div = document.createElement("div");
+          div.className = `badge-card p-4 rounded-lg text-center cursor-pointer ${
+            level >= badge.level ? "bg-blue-200" : "bg-gray-200 grayscale"
+          }`;
+          div.innerHTML = `<div class="badge-icon" style="font-size: 2rem;">${badge.icon}</div><p class="mt-2">${badge.name} (Level ${badge.level})</p>`;
+          div.onclick = (e) => {
+            e.stopPropagation();
+            toggleItemSize(div, ".badge-card");
+          };
+          badgeProgress.appendChild(div);
+        });
+      }
+
+      // Tajweed Antworten-Seite aktualisieren
+      function updateTajweedAnswersPage() {
+        const tableBody = document.getElementById("tajweedAnswersTable");
+        tableBody.innerHTML = "";
+        tajweedQuestions.forEach((q) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${q.question}</td><td>${q.correct}</td>`;
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Element vergrößern/verkleinern
+      function toggleItemSize(element, selector) {
+        const isEnlarged = element.classList.contains("enlarged");
+        document.querySelectorAll(selector).forEach((item) => {
+          item.classList.remove("enlarged");
+        });
+        if (!isEnlarged) {
+          element.classList.add("enlarged");
+        }
+      }
+
+      // Klick auf Dokument, um alle vergrößerten Elemente zu verkleinern
+      document.addEventListener("click", (e) => {
+        if (
+          !e.target.closest(".letter-card") &&
+          !e.target.closest(".badge-card")
+        ) {
+          document
+            .querySelectorAll(".letter-card, .badge-card")
+            .forEach((item) => {
+              item.classList.remove("enlarged");
+            });
+        }
+      });
+
+      // Sticky Progress Bar Sichtbarkeit
+      function updateStickyProgressVisibility() {
+        const stickyProgress = document.getElementById("stickyProgress");
+        const progressSection = document.getElementById("progressSection");
+        const isHomePage = !document
+          .getElementById("home")
+          .classList.contains("hidden");
+        if (isHomePage) {
+          const rect = progressSection.getBoundingClientRect();
+          if (rect.top < 0) {
+            stickyProgress.classList.add("show");
+          } else {
+            stickyProgress.classList.remove("show");
+          }
+        } else {
+          stickyProgress.classList.remove("show");
+        }
+      }
+
+      // Scroll-Event-Listener
+      window.addEventListener("scroll", updateStickyProgressVisibility);
+
+      // Zufällige Auswahl ohne Wiederholung
+      function getRandomItemWithoutRepeat(array, storageKey) {
+        if (array.length === 0) {
+          array.push(...arabicLetters); // Liste auffüllen, wenn leer
+          localStorage.setItem(storageKey, JSON.stringify(array));
+        }
+        const index = Math.floor(Math.random() * array.length);
+        const item = array.splice(index, 1)[0];
+        localStorage.setItem(storageKey, JSON.stringify(array));
+        return item;
+      }
+
+      // Zufällige Auswahl (für Harakat)
+      function getRandomItem(array) {
+        return array[Math.floor(Math.random() * array.length)];
+      }
+
+      // Buchstaben-Matching-Spiel
+      function startLetterMatching() {
+        document
+          .getElementById("letterMatchingGame")
+          .classList.remove("hidden");
+        currentLetter = getRandomItemWithoutRepeat(
+          availableLetters,
+          "availableLetters"
+        );
+        document.getElementById("letterDisplay").textContent =
+          currentLetter.letter;
+        document.getElementById("letterInput").value = "";
+        document.getElementById("letterFeedback").textContent = "";
+      }
+
+      function checkLetter() {
+        const input = document.getElementById("letterInput").value.trim();
+        if (input.toLowerCase() === currentLetter.pronunciation.toLowerCase()) {
+          document.getElementById("letterFeedback").textContent = "Richtig!";
+          score += 5;
+          xp += 5;
+          if (!learnedLetters.includes(currentLetter.letter)) {
+            learnedLetters.push(currentLetter.letter);
+          }
+          if (xp >= getXpPerLevel(level)) {
+            levelUp();
+          }
+          updateUI();
+          startLetterMatching(); // Nächster Buchstabe
+        } else {
+          document.getElementById("letterFeedback").textContent =
+            "Falsch, versuche es nochmal!";
+          xp = Math.max(0, xp - 5); // XP nicht negativ
+          updateUI();
+        }
+      }
+
+      // Harakat-Matching-Spiel
+      function startHarakatMatching() {
+        document
+          .getElementById("harakatMatchingGame")
+          .classList.remove("hidden");
+        currentHarakat = getRandomItem(harakatWords);
+        document.getElementById("harakatDisplay").textContent =
+          currentHarakat.word;
+        document.getElementById("harakatSelect").value = "";
+        document.getElementById("harakatFeedback").textContent = "";
+      }
+
+      function checkHarakat() {
+        const selected = document.getElementById("harakatSelect").value;
+        if (selected === currentHarakat.harakat) {
+          document.getElementById("harakatFeedback").textContent = "Richtig!";
+          score += 5;
+          xp += 5;
+          if (xp >= getXpPerLevel(level)) {
+            levelUp();
+          }
+          updateUI();
+          startHarakatMatching(); // Nächstes Wort
+        } else {
+          document.getElementById("harakatFeedback").textContent =
+            "Falsch, versuche es nochmal!";
+          xp = Math.max(0, xp - 5); // XP nicht negativ
+          updateUI();
+        }
+      }
+
+      // Tajweed-Quiz
+      function startTajweedQuiz() {
+        document.getElementById("tajweedQuizGame").classList.remove("hidden");
+        currentTajweedIndex = Math.floor(
+          Math.random() * tajweedQuestions.length
+        );
+        selectedTajweedOption = null;
+        showTajweedQuestion();
+      }
+
+      function showTajweedQuestion() {
+        const question = tajweedQuestions[currentTajweedIndex];
+        document.getElementById("tajweedQuestion").textContent =
+          question.question;
+        const optionsDiv = document.getElementById("tajweedOptions");
+        optionsDiv.innerHTML = "";
+        question.options.forEach((option) => {
+          const button = document.createElement("button");
+          button.textContent = option;
+          button.className =
+            "block w-full p-2 mt-2 bg-gray-200 rounded hover:bg-gray-300";
+          button.onclick = () => selectTajweedOption(option, button);
+          optionsDiv.appendChild(button);
+        });
+        document.getElementById("confirmTajweed").classList.add("hidden");
+        document.getElementById("tajweedFeedback").textContent = "";
+      }
+
+      function selectTajweedOption(option, button) {
+        selectedTajweedOption = option;
+        document.querySelectorAll("#tajweedOptions button").forEach((btn) => {
+          btn.classList.remove("bg-blue-300");
+          btn.classList.add("bg-gray-200");
+        });
+        button.classList.remove("bg-gray-200");
+        button.classList.add("bg-blue-300");
+        document.getElementById("confirmTajweed").classList.remove("hidden");
+      }
+
+      function checkTajweed() {
+        if (!selectedTajweedOption) return;
+        if (
+          selectedTajweedOption ===
+          tajweedQuestions[currentTajweedIndex].correct
+        ) {
+          document.getElementById("tajweedFeedback").textContent = "Richtig!";
+          score += 5;
+          xp += 5;
+          if (xp >= getXpPerLevel(level)) {
+            levelUp();
+          }
+          updateUI();
+          startTajweedQuiz(); // Nächste Frage sofort
+        } else {
+          document.getElementById("tajweedFeedback").textContent =
+            "Falsch, versuche es nochmal!";
+          xp = Math.max(0, xp - 5); // XP nicht negativ
+          updateUI();
+        }
+      }
+
+      // Levelsystem
+      function levelUp() {
+        level++;
+        xp = 0; // XP zurücksetzen nach Level-Up
+        const newBadge = badges.find((b) => b.level === level);
+        updateUI();
+        if (newBadge) {
+          alert(
+            `Glückwunsch! Du hast ein neues Level erreicht: ${level} und das Abzeichen "${newBadge.name}" freigeschaltet!`
+          );
+        } else {
+          alert(`Glückwunsch! Du hast ein neues Level erreicht: ${level}`);
+        }
+      }
+
+      // Punktzahl teilen
+      document.getElementById("shareButton").addEventListener("click", () => {
+        const currentBadge = badges.find((b) => b.level <= level) || {
+          name: "Kein Abzeichen",
+          icon: "",
+        };
+        const text = `Ich habe ${score} Punkte, bin auf Level ${level} und habe das "${currentBadge.name}" Abzeichen in "Arabisch Lernen"!`;
+        if (navigator.share) {
+          navigator
+            .share({
+              title: "Meine Punktzahl",
+              text: text,
+              url: window.location.href,
+            })
+            .catch((err) => console.error("Fehler beim Teilen:", err));
+        } else {
+          navigator.clipboard.writeText(text).then(() => {
+            alert("Punktzahl in die Zwischenablage kopiert!");
+          });
+        }
+      });
+
+      // Bestätigungs-Button für Tajweed
+      document
+        .getElementById("confirmTajweed")
+        .addEventListener("click", checkTajweed);
+
+      // Initiales Setup
+      updateUI();
+      showPage("home");
+    </script>
+  </body>
+</html>
