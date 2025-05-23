@@ -6,6 +6,10 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
+    <link
+      href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
+      rel="stylesheet"
+    />
     <title>Arabisch Lernen</title>
     <!-- PWA Meta Tags for iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -115,39 +119,56 @@
         <nav class="mt-4">
           <ul class="flex justify-center space-x-4">
             <li>
-              <a href="#home" class="hover:underline" onclick="showPage('home')"
-                >Startseite</a
+              <a
+                href="#home"
+                class="hover:underline"
+                onclick="showPage('home')"
               >
+                <i class="bx bx-home-alt-3"></i>
+              </a>
             </li>
+
             <li>
               <a
                 href="#progress"
                 class="hover:underline"
                 onclick="showPage('progress')"
-                >Fortschritt</a
               >
+                <i class="bx bx-map"></i>
+              </a>
             </li>
             <li>
               <a
                 href="#badges"
                 class="hover:underline"
                 onclick="showPage('badges')"
-                >Abzeichen</a
               >
+                <i class="bx bx-badge"></i>
+              </a>
             </li>
             <li>
               <a
                 href="#tajweedAnswers"
                 class="hover:underline"
                 onclick="showPage('tajweedAnswers')"
-                >Antworten</a
               >
+                <i class="bx bx-server"></i>
+              </a>
             </li>
           </ul>
         </nav>
       </div>
     </header>
-
+    <style>
+      .bx {
+        font-size: 24px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        margin-right: 7vw;
+      }
+    </style>
     <div id="stickyProgress" class="sticky-progress">
       <div class="container mx-auto px-4">
         <p>Level: <span id="stickyLevel">1</span></p>
